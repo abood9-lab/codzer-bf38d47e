@@ -10,33 +10,80 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiEnhancerRouteImport } from './routes/api/enhancer'
+import { Route as ApiModelsRouteImport } from './routes/api/models'
+import { Route as ApiAdminStorageRouteImport } from './routes/api/admin/storage'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEnhancerRoute = ApiEnhancerRouteImport.update({
+  id: '/api/enhancer',
+  path: '/api/enhancer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiModelsRoute = ApiModelsRouteImport.update({
+  id: '/api/models',
+  path: '/api/models',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminStorageRoute = ApiAdminStorageRouteImport.update({
+  id: '/api/admin/storage',
+  path: '/api/admin/storage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/chat': typeof ApiChatRoute
+  '/api/enhancer': typeof ApiEnhancerRoute
+  '/api/models': typeof ApiModelsRoute
+  '/api/admin/storage': typeof ApiAdminStorageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/chat': typeof ApiChatRoute
+  '/api/enhancer': typeof ApiEnhancerRoute
+  '/api/models': typeof ApiModelsRoute
+  '/api/admin/storage': typeof ApiAdminStorageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/chat': typeof ApiChatRoute
+  '/api/enhancer': typeof ApiEnhancerRoute
+  '/api/models': typeof ApiModelsRoute
+  '/api/admin/storage': typeof ApiAdminStorageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    '/' | '/api/chat' | '/api/enhancer' | '/api/models' | '/api/admin/storage'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/chat' | '/api/enhancer' | '/api/models' | '/api/admin/storage'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/chat'
+    | '/api/enhancer'
+    | '/api/models'
+    | '/api/admin/storage'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiChatRoute: typeof ApiChatRoute
+  ApiEnhancerRoute: typeof ApiEnhancerRoute
+  ApiModelsRoute: typeof ApiModelsRoute
+  ApiAdminStorageRoute: typeof ApiAdminStorageRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +95,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/enhancer': {
+      id: '/api/enhancer'
+      path: '/api/enhancer'
+      fullPath: '/api/enhancer'
+      preLoaderRoute: typeof ApiEnhancerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/models': {
+      id: '/api/models'
+      path: '/api/models'
+      fullPath: '/api/models'
+      preLoaderRoute: typeof ApiModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/storage': {
+      id: '/api/admin/storage'
+      path: '/api/admin/storage'
+      fullPath: '/api/admin/storage'
+      preLoaderRoute: typeof ApiAdminStorageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiChatRoute: ApiChatRoute,
+  ApiEnhancerRoute: ApiEnhancerRoute,
+  ApiModelsRoute: ApiModelsRoute,
+  ApiAdminStorageRoute: ApiAdminStorageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

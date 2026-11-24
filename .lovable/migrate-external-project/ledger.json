@@ -1,0 +1,105 @@
+{
+  "source": "github",
+  "repository": "https://github.com/abood9-lab/site-whiterchat-app",
+  "target": "tanstack-start-lovable-cloud",
+  "capabilities": [
+    {
+      "capability": "code",
+      "source": "Remix + Vite + UnoCSS + React 18",
+      "outcome": "migrate",
+      "status": "in_progress",
+      "next_action": "Recreate landing page, auth page, chat workspace with workbench/preview, and admin storage page in TanStack Start + Tailwind v4"
+    },
+    {
+      "capability": "schema",
+      "source": "Firebase Firestore (users, admins, chats, projects, project_files, sessions, versions, migrations)",
+      "outcome": "migrate",
+      "status": "in_progress",
+      "next_action": "Create Lovable Cloud PostgreSQL schema with explicit grants and owner/admin RLS policies"
+    },
+    {
+      "capability": "records",
+      "source": "Firebase Firestore documents",
+      "outcome": "migrate",
+      "status": "pending",
+      "next_action": "Request CSV/JSON exports of Firestore collections after preview is ready"
+    },
+    {
+      "capability": "auth_identities",
+      "source": "Firebase Auth (email/password + Google)",
+      "outcome": "migrate",
+      "status": "in_progress",
+      "next_action": "Migrate to Lovable Cloud Auth with first-login email verification and password setup; request Firebase Auth user export after preview"
+    },
+    {
+      "capability": "authorization",
+      "source": "firestore.rules (owner-scoped + admins collection + shahedalmefleh850@gmail.com)",
+      "outcome": "migrate",
+      "status": "in_progress",
+      "next_action": "Implement user_roles table, has_role security definer function, and RLS policies"
+    },
+    {
+      "capability": "uploaded_file_bytes",
+      "source": "Daytona Volumes & legacy Cloudinary assets",
+      "outcome": "preserve",
+      "status": "pending",
+      "next_action": "Preserve Daytona and Cloudinary integrations; store project files in Lovable Cloud DB/Storage when Daytona credentials are not yet supplied"
+    },
+    {
+      "capability": "external_providers_ai",
+      "source": "OpenRouter, Groq, Gemini",
+      "outcome": "preserve",
+      "status": "in_progress",
+      "next_action": "Preserve OpenRouter, Groq, and Gemini providers via server routes and add Lovable AI Gateway so chat works immediately"
+    },
+    {
+      "capability": "external_providers_runtime",
+      "source": "Daytona SDK & WebContainer",
+      "outcome": "preserve",
+      "status": "in_progress",
+      "next_action": "Preserve Daytona API endpoints and add browser-native live preview workbench"
+    },
+    {
+      "capability": "external_providers_media",
+      "source": "Cloudinary",
+      "outcome": "preserve",
+      "status": "in_progress",
+      "next_action": "Preserve Cloudinary status/sync API endpoints"
+    },
+    {
+      "capability": "public_endpoints",
+      "source": "/api/models, /api/chat, /api/enhancer, /api/admin/storage, /api/cloudinary/status",
+      "outcome": "migrate",
+      "status": "in_progress",
+      "next_action": "Recreate as TanStack Start server routes under src/routes/api/"
+    },
+    {
+      "capability": "callbacks_webhooks_schedules",
+      "source": "None detected beyond Firebase Auth",
+      "outcome": "none",
+      "status": "verified",
+      "next_action": "None"
+    },
+    {
+      "capability": "secrets",
+      "source": "OPENROUTER_API_KEY, GROQ_API_KEY, GEMINI_API_KEY, DAYTONA_API_KEY, CLOUDINARY_URL",
+      "outcome": "preserve",
+      "status": "pending",
+      "next_action": "Request optional provider keys securely before live external-provider verification"
+    },
+    {
+      "capability": "cutover",
+      "source": "Firebase Auth / Firestore to Lovable Cloud",
+      "outcome": "migrate",
+      "status": "pending",
+      "next_action": "Import Firestore/Auth exports if user supplies them and verify existing user first-login flow"
+    },
+    {
+      "capability": "verification",
+      "source": "End-to-end build, routes, auth, CRUD, AI chat, workbench",
+      "outcome": "migrate",
+      "status": "pending",
+      "next_action": "Run build check, automated tests, and Playwright browser verification"
+    }
+  ]
+}
