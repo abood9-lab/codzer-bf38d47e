@@ -28,3 +28,7 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- Store edited workspace files in the existing owner-scoped projects/project_files tables, independently of chat artifacts, so manual edits survive reloads.
+- Use shared workspace-tools for file path validation and browser ZIP downloads; never import credential files into generated workspaces.
+- Keep starter projects as browser-native HTML/CSS/JS files compatible with the sandboxed iframe preview.

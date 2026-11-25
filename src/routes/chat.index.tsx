@@ -3,20 +3,11 @@ import type { ExecutionMode, ProviderId } from "@/lib/types";
 import { ChatWorkspace } from "@/components/ChatWorkspace";
 
 export const Route = createFileRoute("/chat/")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    prompt: typeof search["prompt"] === "string" ? search["prompt"] : undefined,
-    provider:
-      search["provider"] === "lovable" ||
-      search["provider"] === "openrouter" ||
-      search["provider"] === "groq" ||
-      search["provider"] === "gemini"
-        ? (search["provider"] as ProviderId)
-        : undefined,
-    model: typeof search["model"] === "string" ? search["model"] : undefined,
-    mode:
-      search["mode"] === "build" || search["mode"] === "plan"
-        ? (search["mode"] as ExecutionMode)
-        : undefined,
+  validateSearch: (search: Record<string, unknown>): { prompt?: string; provider?: ProviderId; model?: string; mode?: ExecutionMode } => ({
+    ...(typeof search["prompt"] === "string" ? { prompt: search["prompt"] } : {}),
+    ...(search["provider"] === "lovable" || search["provider"] === "openrouter" || search["provider"] === "groq" || search["provider"] === "gemini" ? { provider: search["provider"] } : {}),
+    ...(typeof search["model"] === "string" ? { model: search["model"] } : {}),
+    ...(search["mode"] === "build" || search["mode"] === "plan" ? { mode: search["mode"] } : {}),
   }),
   head: () => ({
     meta: [
@@ -35,10 +26,10 @@ function ChatIndexPage() {
   const { prompt, provider, model, mode } = Route.useSearch();
   return (
     <ChatWorkspace
-      initialPrompt={prompt}
-      initialProvider={provider}
-      initialModel={model}
-      initialMode={mode}
+      {...(prompt ? { initialPrompt: prompt } : {})}
+      {...(provider ? { initialProvider: provider } : {})}
+      {...(model ? { initialModel: model } : {})}
+      {...(mode ? { initialMode: mode } : {})}
     />
   );
 }

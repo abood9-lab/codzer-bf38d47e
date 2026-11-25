@@ -17,6 +17,11 @@ import {
   FileCode2,
   Hammer,
   ListChecks,
+  Copy,
+  Download,
+  Square,
+  Search,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +32,8 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { ModelSelector } from "@/components/ModelSelector";
 import { ProfileModal } from "@/components/ProfileModal";
 import { WorkbenchPanel } from "@/components/WorkbenchPanel";
+import { Button } from "@/components/ui/button";
+import { conversationMarkdown, downloadFile } from "@/lib/workspace-tools";
 
 interface ChatWorkspaceProps {
   chatId?: string;
@@ -61,6 +68,8 @@ export function ChatWorkspace({
   const [mode, setMode] = useState<ExecutionMode>(initialMode);
   const [streaming, setStreaming] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
+  const [historySearch, setHistorySearch] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const autoSentRef = useRef(false);
@@ -98,7 +107,7 @@ export function ChatWorkspace({
 
   useEffect(() => {
     if (!authLoading && !user) {
-      void navigate({ to: "/auth", replace: true });
+      void navigate({ to: "/auth", search: { mode: "signin" }, replace: true });
     }
   }, [authLoading, user, navigate]);
 
@@ -143,8 +152,8 @@ export function ChatWorkspace({
   const persistChat = useCallback(
     async (id: string, nextMessages: ChatMessage[]) => {
       if (!user) return;
-      const description = (nextMessages[0]?.content ?? "New Chat").slice(0, 80);
-      await supabase.from("chats").upsert({
+      const description = history.find((chat) => chat.id === id)?.description ?? (nextMessages[0]?.content ?? "New Chat").slice(0, 80);
+      const { error } = await supabase.from("chats").upsert({
         id,
         user_id: user.id,
         url_id: id,
@@ -154,9 +163,10 @@ export function ChatWorkspace({
         messages: nextMessages as unknown as never,
         updated_at: new Date().toISOString(),
       });
+      if (error) throw new Error(`Conversation could not be saved: ${error.message}`);
       void loadHistory();
     },
-    [user, provider, model, loadHistory],
+    [user, provider, model, loadHistory, history],
   );
 
   const sendMessage = useCallback(
@@ -174,16 +184,21 @@ export function ChatWorkspace({
       setMessages([...nextHistory, { id: assistantId, role: "assistant", content: "" }]);
       setInput("");
       setStreaming(true);
+      const controller = new AbortController();
+      abortRef.current = controller;
+      let accumulated = "";
 
       try {
         const res = await fetch("/api/chat", {
+          signal: controller.signal,
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            messages: nextHistory.map((m) => ({ role: m.role, content: m.content })),
+            messages: nextHistory.filter((m) => m.content.trim()).map((m) => ({ role: m.role, content: m.content })),
+            files: Object.values(files).map(({ path, content }) => ({ path, content })),
             provider,
             model,
             mode,
@@ -197,7 +212,6 @@ export function ChatWorkspace({
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        let accumulated = "";
 
         while (true) {
           const { done, value } = await reader.read();
@@ -229,14 +243,23 @@ export function ChatWorkspace({
 
         await persistChat(currentId, finalMessages);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Failed to send message";
-        toast.error(msg);
-        setMessages(nextHistory);
+        if (controller.signal.aborted) {
+          const partial = accumulated ? [...nextHistory, { id: assistantId, role: "assistant" as const, content: accumulated }] : nextHistory;
+          setMessages(partial);
+          const { artifacts } = parseArtifactsFromText(accumulated);
+          if (artifacts.length) setFiles((previous) => ({ ...previous, ...Object.fromEntries(artifacts.flatMap((artifact) => artifact.files).map((file) => [file.path, file])) }));
+          try { await persistChat(currentId, partial); } catch (error) { toast.error(error instanceof Error ? error.message : "Save failed"); }
+        } else {
+          toast.error(err instanceof Error ? err.message : "Failed to send message");
+          setMessages(accumulated ? [...nextHistory, { id: assistantId, role: "assistant", content: accumulated }] : nextHistory);
+          if (!accumulated) setInput(text);
+        }
       } finally {
+        abortRef.current = null;
         setStreaming(false);
       }
     },
-    [input, streaming, session, activeChatId, messages, provider, model, mode, persistChat],
+    [input, streaming, session, activeChatId, messages, provider, model, mode, persistChat, files],
   );
 
   useEffect(() => {
@@ -273,7 +296,9 @@ export function ChatWorkspace({
   };
 
   const handleDeleteChat = async (id: string) => {
-    await supabase.from("chats").delete().eq("id", id);
+    if (streaming || !window.confirm("Delete this conversation? This cannot be undone.")) return;
+    const { error } = await supabase.from("chats").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
     setHistory((prev) => prev.filter((c) => c.id !== id));
     if (activeChatId === id) {
       setActiveChatId("");
@@ -282,6 +307,14 @@ export function ChatWorkspace({
       void navigate({ to: "/chat" });
     }
     toast.success("Chat deleted");
+  };
+
+  const renameChat = async (item: ChatSession) => {
+    const description = window.prompt("Conversation name", item.description)?.trim();
+    if (!description) return;
+    const { error } = await supabase.from("chats").update({ description: description.slice(0, 80) }).eq("id", item.id);
+    if (error) toast.error(error.message);
+    else setHistory((previous) => previous.map((chat) => chat.id === item.id ? { ...chat, description: description.slice(0, 80) } : chat));
   };
 
   const fileCount = useMemo(() => Object.keys(files).length, [files]);
@@ -313,6 +346,7 @@ export function ChatWorkspace({
             <div className="p-3">
               <button
                 type="button"
+                disabled={streaming}
                 onClick={() => {
                   setActiveChatId("");
                   setMessages([]);
@@ -327,6 +361,7 @@ export function ChatWorkspace({
             </div>
 
             <div className="flex-1 overflow-y-auto px-2 pb-4">
+              <label className="mb-3 flex items-center gap-2 rounded-md border border-border bg-background px-2 py-2"><Search className="size-3.5 shrink-0 text-muted-foreground" /><input aria-label="Search conversations" value={historySearch} onChange={(event) => setHistorySearch(event.target.value)} placeholder="Search conversations" className="min-w-0 flex-1 bg-transparent text-xs outline-none" /></label>
               <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Recent Chats
               </div>
@@ -334,7 +369,7 @@ export function ChatWorkspace({
                 <p className="px-2 py-4 text-xs text-muted-foreground">No saved conversations yet.</p>
               ) : (
                 <ul className="space-y-1">
-                  {history.map((item) => (
+                  {history.filter((item) => item.description.toLowerCase().includes(historySearch.toLowerCase())).map((item) => (
                     <li
                       key={item.id}
                       className={`group flex items-center justify-between rounded-lg px-2.5 py-2 text-xs transition-colors ${
@@ -347,10 +382,11 @@ export function ChatWorkspace({
                         to="/chat/$id"
                         params={{ id: item.id }}
                         className="min-w-0 flex-1 truncate"
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={(event) => { if (streaming) event.preventDefault(); else setSidebarOpen(false); }}
                       >
                         {item.description || "Untitled chat"}
                       </Link>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" aria-label="Rename conversation" title="Rename conversation" disabled={streaming} onClick={() => void renameChat(item)}><Pencil className="size-3" /></Button>
                       <button
                         type="button"
                         onClick={() => handleDeleteChat(item.id)}
@@ -408,6 +444,7 @@ export function ChatWorkspace({
           </div>
 
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" title="Export conversation" aria-label="Export conversation" disabled={!messages.length || streaming} onClick={() => downloadFile("whiterchat-conversation.md", conversationMarkdown(messages), "text/markdown")}><Download /></Button>
             <button
               type="button"
               onClick={toggleTheme}
@@ -459,6 +496,7 @@ export function ChatWorkspace({
                           <p className="whitespace-pre-wrap">{msg.content}</p>
                         ) : (
                           <div className="space-y-3">
+                            {!streaming && msg.content && <div className="flex justify-end"><Button variant="ghost" size="icon" title="Copy response" aria-label="Copy response" onClick={() => { void navigator.clipboard.writeText(msg.content).then(() => toast.success("Response copied")).catch(() => toast.error("Clipboard unavailable")); }}><Copy /></Button></div>}
                             {parsed.cleanMarkdown ? (
                               <div className="prose prose-sm max-w-none dark:prose-invert">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -558,6 +596,7 @@ export function ChatWorkspace({
                         setModel(m);
                       }}
                     />
+                    {streaming && <Button type="button" variant="destructive" size="icon" title="Stop generation" aria-label="Stop generation" onClick={() => abortRef.current?.abort()}><Square /></Button>}
                     <button
                       type="submit"
                       disabled={streaming || !input.trim()}
@@ -572,9 +611,10 @@ export function ChatWorkspace({
           </main>
 
           {workbenchOpen && (
-            <div className="hidden w-[48%] max-w-3xl lg:block">
+            <div className="fixed inset-x-0 bottom-0 top-14 z-30 bg-background lg:static lg:w-[48%] lg:max-w-3xl">
               <WorkbenchPanel
                 files={files}
+                onReplaceFiles={setFiles}
                 onUpdateFile={(path, content) =>
                   setFiles((prev) => ({
                     ...prev,

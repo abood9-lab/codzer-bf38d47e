@@ -1,0 +1,27 @@
+import { makeWorkspaceFile } from "@/lib/workspace-tools";
+import type { WorkspaceFile } from "@/lib/types";
+
+const baseCss = `:root{--bg:#f5f7f9;--ink:#172125;--panel:#fff;--accent:#147d68;--line:#dce3e6;--muted:#5f6c72}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px system-ui,sans-serif}main{max-width:1000px;margin:auto;padding:40px 24px}header{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:28px}h1{font-size:36px;margin:8px 0}p{color:var(--muted)}button,input,textarea{font:inherit;border:1px solid var(--line);border-radius:6px;padding:10px}button{background:var(--accent);color:var(--panel);cursor:pointer}input,textarea{background:var(--panel);color:var(--ink)}form{display:flex;gap:8px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.item{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:20px}small{color:var(--muted)}@media(max-width:650px){.grid{grid-template-columns:1fr}h1{font-size:30px}main{padding:24px 16px}}`;
+
+function files(body: string, script: string): Record<string, WorkspaceFile> {
+  return Object.fromEntries([
+    makeWorkspaceFile("index.html", `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My project</title><link rel="stylesheet" href="styles.css"></head><body><main>${body}</main><script src="app.js"></script></body></html>`),
+    makeWorkspaceFile("styles.css", baseCss),
+    makeWorkspaceFile("app.js", script),
+  ].map((file) => [file.path, file]));
+}
+
+export const starterTemplates = [
+  { id: "tasks", name: "Task board", subtitle: "Projects & productivity", files: files(
+    `<header><small>WORKSPACE / DAILY PLANNER</small><h1>Make room for progress.</h1><p>Your next great idea starts with one small task.</p></header><form id="task-form"><input id="task" placeholder="Add a task" required aria-label="Task"><button>Add task</button></form><h2>Today</h2><div id="tasks" class="grid"></div>`,
+    `const tasks=[{text:'Sketch the first idea',done:false},{text:'Build something useful',done:false},{text:'Share your work',done:true}];function render(){const list=document.getElementById('tasks');list.replaceChildren();tasks.forEach((task,i)=>{const item=document.createElement('div');item.className='item';const text=document.createElement('p');text.textContent=task.text;const button=document.createElement('button');button.textContent=task.done?'Completed':'Mark complete';button.onclick=()=>{task.done=!task.done;render()};item.append(text,button);list.append(item)})}document.getElementById('task-form').onsubmit=e=>{e.preventDefault();const input=document.getElementById('task');if(input.value.trim())tasks.push({text:input.value.trim(),done:false});input.value='';render()};render();`,
+  ) },
+  { id: "notes", name: "Notes studio", subtitle: "Writing & ideas", files: files(
+    `<header><small>PERSONAL / NOTES</small><h1>A place for your thoughts.</h1><p>Capture what matters.</p></header><form id="note-form"><input id="title" placeholder="Note title" aria-label="Note title" required><input id="body" placeholder="Your idea…" aria-label="Note content" required><button>Save note</button></form><h2>Notebook</h2><div id="notes" class="grid"></div>`,
+    `const notes=[{title:'A fresh start',body:'Everything begins with an idea.'}];function render(){const list=document.getElementById('notes');list.replaceChildren();notes.forEach((note,i)=>{const item=document.createElement('article');item.className='item';const title=document.createElement('h2');title.textContent=note.title;const body=document.createElement('p');body.textContent=note.body;const button=document.createElement('button');button.textContent='Delete';button.onclick=()=>{notes.splice(i,1);render()};item.append(title,body,button);list.append(item)})}document.getElementById('note-form').onsubmit=e=>{e.preventDefault();const title=document.getElementById('title'),body=document.getElementById('body');notes.push({title:title.value,body:body.value});e.target.reset();render()};render();`,
+  ) },
+  { id: "dashboard", name: "Analytics dashboard", subtitle: "Business & reporting", files: files(
+    `<header><small>BUSINESS / OVERVIEW</small><h1>The big picture.</h1><p id="period">This month · sample data</p></header><form><button type="button" id="switch">Previous month</button></form><h2>Performance</h2><div class="grid"><article class="item"><small>Revenue</small><h1 id="revenue">$24,800</h1></article><article class="item"><small>Customers</small><h1 id="customers">1,240</h1></article><article class="item"><small>Orders</small><h1 id="orders">386</h1></article></div>`,
+    `let current=true;document.getElementById('switch').onclick=()=>{current=!current;document.getElementById('period').textContent=(current?'This':'Previous')+' month · sample data';document.getElementById('revenue').textContent=current?'$24,800':'$21,600';document.getElementById('customers').textContent=current?'1,240':'1,085';document.getElementById('orders').textContent=current?'386':'342';document.getElementById('switch').textContent=current?'Previous month':'This month'};`,
+  ) },
+];
