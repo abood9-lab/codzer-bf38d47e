@@ -32,3 +32,6 @@ use the editor.
 - Store edited workspace files in the existing owner-scoped projects/project_files tables, independently of chat artifacts, so manual edits survive reloads.
 - Use shared workspace-tools for file path validation and browser ZIP downloads; never import credential files into generated workspaces.
 - Keep starter projects as browser-native HTML/CSS/JS files compatible with the sandboxed iframe preview.
+- Keep project secrets encrypted in a server-only table after checking project ownership; never include values in AI prompts, workspace files or previews.
+- Route Daytona lifecycle calls through its connector and keep signed toolbox capabilities server-only; commands run only in the caller's owned project sandbox.
+- Parse streamed artifacts incrementally for the editor and commit only complete files to the preview, avoiding execution of unfinished JavaScript.

@@ -172,6 +172,38 @@ export type Database = {
           },
         ]
       }
+      project_secrets: {
+        Row: {
+          encrypted_value: string
+          name: string
+          owner_id: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          encrypted_value: string
+          name: string
+          owner_id: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          encrypted_value?: string
+          name?: string
+          owner_id?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_secrets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string
