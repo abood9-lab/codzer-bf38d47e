@@ -1,4 +1,5 @@
 # Whiterchat upgrade
+- [ ] Add Daytona command terminal, live streamed code, guided Plan modal, secure project-secret modal and upgraded preview/workspace styling.
 - [ ] Verify migrated preview, authentication and AI chat.
 - [ ] Add project library with cloud save/load for edited workspace files.
 - [ ] Add starter templates, file creation/deletion, ZIP export and text-file import.
